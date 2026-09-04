@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hello</title>
+<style>
+  :root{
+    --bg:#02040a;
+    --rain:#3a6cff;
+    --rain-dim:#1a2a66;
+    --text-glow:#e8ecff;
+    --accent:#ff4d6d;
+  }
+  html,body{
+    margin:0; padding:0; height:100%; background:var(--bg);
+    overflow:hidden; font-family:'Courier New', monospace;
+  }
+  canvas{ position:fixed; inset:0; display:block; }
+
+  .stage{
+    position:fixed; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+    text-align:center;
+    padding:0 6vw;
+  }
+
+  #message{
+    font-family: 'Arial Black', 'Segoe UI Black', sans-serif;
+    font-weight:900;
+    font-size:clamp(28px, 9vw, 64px);
+    line-height:1.15;
+    color:var(--text-glow);
+    text-shadow:
+      0 0 6px rgba(120,150,255,0.55),
+      0 0 22px rgba(80,110,255,0.35);
+    white-space:pre-wrap;
+    max-width:900px;
+  }
+
+  .cursor{
+    display:inline-block;
+    width:0.5ch;
+    background:var(--accent);
+    margin-left:4px;
+    animation:blink 0.9s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  #hint{
+    position:fixed; bottom:28px; left:0; right:0;
+    text-align:center; color:#5b6ba8; font-size:12px;
+    letter-spacing:1px; font-family:Arial, sans-serif;
+    opacity:0.8;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="rain"></canvas>
+
+<div class="stage">
+  <div id="message"></div>
+</div>
+
+<div id="hint">Chạm màn hình để gõ lại • Kéo dài URL để đổi lời nhắn</div>
+
+<script>
+/* ================= CẤU HÌNH ================= */
+// Đổi lời nhắn ở đây, hoặc truyền qua URL: ?msg=Loi%20nhan%20cua%20ban
+const params = new URLSearchParams(location.search);
+const MESSAGE = params.get('msg') || "Chào anh 🌊🌅!\nMình làm quen nhé 😄\nChúc anh một buổi tối vui vẻ ☺️ kiki";
+const RAIN_WORDS = ["LOVE","YOU","U&I","YÊU","❤"];
+/* ============================================= */
+
+// ---------- Hiệu ứng mưa ký tự kiểu Matrix ----------
+const canvas = document.getElementById('rain');
+const ctx = canvas.getContext('2d');
+let w, h, columns, drops;
+
+function resize(){
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+  const fontSize = 18;
+  columns = Math.floor(w / fontSize);
+  drops = new Array(columns).fill(0).map(()=> Math.random()*-50);
+}
+resize();
+window.addEventListener('resize', resize);
+
+function randomGlyph(){
+  if (Math.random() < 0.12){
+    const word = RAIN_WORDS[Math.floor(Math.random()*RAIN_WORDS.length)];
+    return word[Math.floor(Math.random()*word.length)];
+  }
+  const chars = "01LOVE❤YOUABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  return chars[Math.floor(Math.random()*chars.length)];
+}
+
+function drawRain(){
+  ctx.fillStyle = "rgba(2,4,10,0.16)";
+  ctx.fillRect(0,0,w,h);
+
+  const fontSize = 18;
+  ctx.font = fontSize + "px monospace";
+
+  for (let i=0; i<columns; i++){
+    const x = i*fontSize;
+    const y = drops[i]*fontSize;
+
+    // ký tự sáng đầu dòng
+    ctx.fillStyle = "#cfe0ff";
+    ctx.fillText(randomGlyph(), x, y);
+
+    // đuôi mờ dần
+    ctx.fillStyle = "rgba(58,108,255,0.55)";
+    ctx.fillText(randomGlyph(), x, y - fontSize);
+
+    if (y > h && Math.random() > 0.975){
+      drops[i] = 0;
+    }
+    drops[i]++;
+  }
+  requestAnimationFrame(drawRain);
+}
+drawRain();
+
+// ---------- Hiệu ứng gõ chữ ----------
+const el = document.getElementById('message');
+
+function typeMessage(text){
+  el.textContent = "";
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor';
+  cursor.innerHTML = "&nbsp;";
+
+  let i = 0;
+  function step(){
+    if (i <= text.length){
+      el.textContent = text.slice(0, i);
+      el.appendChild(cursor);
+      i++;
+      setTimeout(step, 90 + Math.random()*70);
+    }
+  }
+  step();
+}
+
+typeMessage(MESSAGE);
+document.body.addEventListener('click', ()=> typeMessage(MESSAGE));
+</script>
+
+</body>
+</html>
